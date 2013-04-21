@@ -7,12 +7,13 @@ module Databasedotcom
 
       # Returns an enumerable Feed of FeedItem objects that make up the feed with the specified _id_. Should not be called as a class method on Feed, but as a method on subclasses.
       #
-      #    NewsFeed.find(@client)                   #=>   [#<FeedItem ...>, #<FeedItem ...>, ...]
-      #    PeopleFeed.find(@client, "userid")       #=>   [#<FeedItem ...>, #<FeedItem ...>, ...]
-      #    FilterFeed.find(@client, "me", "000")    #=>   [#<FeedItem ...>, #<FeedItem ...>, ...]
+      #    NewsFeed.find(@client)                                 #=>   [#<FeedItem ...>, #<FeedItem ...>, ...]
+      #    PeopleFeed.find(@client, "userid")                     #=>   [#<FeedItem ...>, #<FeedItem ...>, ...]
+      #    FilterFeed.find(@client, "me", "000")                  #=>   [#<FeedItem ...>, #<FeedItem ...>, ...]
+      #    CompanyFeed.find(@client, nil, nil, :page_size => 100) #=>   [#<FeedItem ...>, #<FeedItem ...>, ...]
       #
       # _id_prefix_ is only applicable for FilterFeed.
-      def self.find(client, id="me", id_prefix=nil)
+      def self.find(client, id="me", id_prefix=nil, request_params={})
         path_components = %w(services data)
         path_components << "v#{client.version}"
         path_components.concat(%w(chatter feeds))
@@ -21,6 +22,7 @@ module Databasedotcom
         path_components << id_prefix
         path_components << "feed-items"
         path = "/" + path_components.compact.join('/')
+        path += "?" + request_params.inject([]){|ary, (key,val)| ary << "#{key.to_s.camelize(:lower)}=#{val}"; ary }.join("&") unless request_params.empty?
         result = client.http_get(path)
         response = JSON.parse(result.body)
         collection = self.new(client, nil, response["nextPageUrl"], response["previousPageUrl"], response["currentPageUrl"])

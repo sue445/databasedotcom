@@ -9,13 +9,27 @@ Databasedotcom::Chatter::FEED_TYPES.each do |feed_type|
     end
 
     describe ".find" do
-      before do
-        expected_path = feed_type == "Company" ? "/services/data/v23/chatter/feeds/#{feed_type.resourcerize}/feed-items" : "/services/data/v23/chatter/feeds/#{feed_type.resourcerize}/fid/feed-items"
-        @client_mock.should_receive(:http_get).with(expected_path).and_return(double "response", :body => {"items" => []}.to_json)
+      context "when not exists request_params" do
+        before do
+          expected_path = feed_type == "Company" ? "/services/data/v23/chatter/feeds/#{feed_type.resourcerize}/feed-items" : "/services/data/v23/chatter/feeds/#{feed_type.resourcerize}/fid/feed-items"
+          @client_mock.should_receive(:http_get).with(expected_path).and_return(double "response", :body => {"items" => []}.to_json)
+        end
+
+        it "retrieves a #{feed_type}feed" do
+          Databasedotcom::Chatter.const_get("#{feed_type}Feed").send(:find, @client_mock, "fid")
+        end
       end
 
-      it "retrieves a #{feed_type}feed" do
-        Databasedotcom::Chatter.const_get("#{feed_type}Feed").send(:find, @client_mock, "fid")
+      context "when exists request_params" do
+        before do
+          query_string = "sort=LastModifiedDateDesc&pageSize=100"
+          expected_path = feed_type == "Company" ? "/services/data/v23/chatter/feeds/#{feed_type.resourcerize}/feed-items?#{query_string}" : "/services/data/v23/chatter/feeds/#{feed_type.resourcerize}/fid/feed-items?#{query_string}"
+          @client_mock.should_receive(:http_get).with(expected_path).and_return(double "response", :body => {"items" => []}.to_json)
+        end
+
+        it "retrieves a #{feed_type}feed" do
+          Databasedotcom::Chatter.const_get("#{feed_type}Feed").send(:find, @client_mock, "fid", nil, :sort => "LastModifiedDateDesc", :page_size => 100)
+        end
       end
     end
 
